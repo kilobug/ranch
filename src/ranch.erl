@@ -1,16 +1,3 @@
-%% Copyright (c) 2011-2012, Loïc Hoguin <essen@ninenines.eu>
-%%
-%% Permission to use, copy, modify, and/or distribute this software for any
-%% purpose with or without fee is hereby granted, provided that the above
-%% copyright notice and this permission notice appear in all copies.
-%%
-%% THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-%% WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-%% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-%% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-%% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-%% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-%% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 %% @doc Ranch API to start and stop listeners.
 -module(ranch).
@@ -32,30 +19,15 @@
 -type max_conns() :: non_neg_integer() | infinity.
 -export_type([max_conns/0]).
 
-%% @doc Start a listener for the given transport and protocol.
-%%
-%% A listener is effectively a pool of <em>NbAcceptors</em> acceptors.
-%% Acceptors accept connections on the given <em>Transport</em> and forward
-%% connections to the given <em>Protocol</em> handler. Both transport and
-%% protocol modules can be given options through the <em>TransOpts</em> and
-%% the <em>ProtoOpts</em> arguments. Available options are documented in the
-%% <em>listen</em> transport function and in the protocol module of your choice.
-%%
-%% All acceptor and connection processes are supervised by the listener.
-%%
-%% It is recommended to set a large enough number of acceptors to improve
-%% performance. The exact number depends of course on your hardware, on the
-%% protocol used and on the number of expected simultaneous connections.
-%%
-%% The <em>Transport</em> option <em>max_connections</em> allows you to define
-%% the maximum number of simultaneous connections for this listener. It defaults
-%% to 1024. See <em>ranch_listener</em> for more details on limiting the number
-%% of connections.
-%%
-%% <em>Ref</em> can be used to stop the listener later on.
-%%
-%% This function will return `{error, badarg}` if and only if the transport
-%% module given doesn't appear to be correct.
+
+%% @doc 给定传输层transport和协议protocol，启动监听器listener
+%% 监听器是含有NbAcceptors个acceptor的池
+%% Acceptor在给定的Transport上接受连接，转发连接到给定的协议处理器
+%% TransOpts是传输层的设置选项，ProtoOpts是协议选项。
+%% 监听器listener监督所有的acceptor和连接进程
+%% 为了提高性能，推荐设置足够大的acceptor数目。确切的数字依赖于硬件，协议和期望的并发连接的数目。
+%% 传输Transprot选项max_connections允许定义并发连接的最大数目，默认是1024.
+%% transport出错，会返回`{error, badarg}`
 -spec start_listener(any(), non_neg_integer(), module(), any(), module(), any())
 	-> {ok, pid()} | {error, badarg}.
 start_listener(Ref, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts)
