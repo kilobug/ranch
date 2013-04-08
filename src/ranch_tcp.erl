@@ -1,22 +1,8 @@
-%% Copyright (c) 2011-2012, Loïc Hoguin <essen@ninenines.eu>
-%%
-%% Permission to use, copy, modify, and/or distribute this software for any
-%% purpose with or without fee is hereby granted, provided that the above
-%% copyright notice and this permission notice appear in all copies.
-%%
-%% THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-%% WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-%% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-%% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-%% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-%% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-%% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 %% @doc TCP transport API.
 %%
-%% Wrapper around <em>gen_tcp</em> implementing the Ranch transport API.
+%% gen_tcp 的轻量级封装，实现了 Ranch transport API.
 %%
-%% @see gen_tcp
 -module(ranch_tcp).
 -behaviour(ranch_transport).
 
@@ -131,11 +117,7 @@ sendfile(Socket, Filename) ->
 setopts(Socket, Opts) ->
 	inet:setopts(Socket, Opts).
 
-%% @doc Give control of the socket to a new process.
-%%
-%% Must be called from the process currently controlling the socket,
-%% otherwise an {error, not_owner} tuple will be returned.
-%%
+%% @doc 设置 socket 控制进程
 %% @see gen_tcp:controlling_process/2
 -spec controlling_process(inet:socket(), pid())
 	-> ok | {error, closed | not_owner | atom()}.

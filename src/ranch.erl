@@ -39,6 +39,8 @@ start_listener(Ref, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts)
 		false ->
 			{error, badarg};
 		true ->
+      %% 给 ranch_sup 添加一个 ranch_listener_sup 子进程（之前还有一个 ranch_server 子进程）
+      %% ranch_listener_sup 是一个监督者
 			Res = supervisor:start_child(ranch_sup, child_spec(Ref, NbAcceptors,
 					Transport, TransOpts, Protocol, ProtoOpts)),
 			Socket = proplists:get_value(socket, TransOpts),
@@ -49,6 +51,8 @@ start_listener(Ref, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts)
 					%% listener is alive. If the socket closes however there
 					%% will be no way to recover because we don't know how
 					%% to open it again.
+          %% 获取 id 为 ranch_acceptors_sup 的子进程
+          %% 把 socket 控制进程设置为获取的子进程 ？？？
 					Children = supervisor:which_children(Pid),
 					{_, AcceptorsSup, _, _}
 						= lists:keyfind(ranch_acceptors_sup, 1, Children),
