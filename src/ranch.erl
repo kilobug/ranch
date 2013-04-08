@@ -28,6 +28,7 @@
 %% 为了提高性能，推荐设置足够大的acceptor数目。确切的数字依赖于硬件，协议和期望的并发连接的数目。
 %% 传输Transprot选项max_connections允许定义并发连接的最大数目，默认是1024.
 %% transport出错，会返回`{error, badarg}`
+%% ranch:start_listener(tcp_echo, 1, ranch_tcp, [{port, 5555}], echo_protocol, [])
 -spec start_listener(any(), non_neg_integer(), module(), any(), module(), any())
 	-> {ok, pid()} | {error, badarg}.
 start_listener(Ref, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts)
@@ -75,13 +76,10 @@ stop_listener(Ref) ->
 			{error, Reason}
 	end.
 
-%% @doc Return a child spec suitable for embedding.
-%%
-%% When you want to embed Ranch in another application, you can use this
-%% function to create a <em>ChildSpec</em> suitable for use in a supervisor.
-%% The parameters are the same as in <em>start_listener/6</em> but rather
-%% than hooking the listener to the Ranch internal supervisor, it just returns
-%% the spec.
+%% @doc 生成适合嵌入应用的子进程规范
+%% 如果要在应用中嵌入ranch，可以使用这个函数来生成监督者使用的子进程规范。参数和
+%% start_listener相同，但不会把listener挂街道ranch内部的监督树，只是返回子进程规范。
+%% 传入参数：(tcp_echo, 1, ranch_tcp, [{port, 5555}], echo_protocol, [])
 -spec child_spec(any(), non_neg_integer(), module(), any(), module(), any())
 	-> supervisor:child_spec().
 child_spec(Ref, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts)
