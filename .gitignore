@@ -1,5 +1,6 @@
 .ranch.plt
 .eunit
+.idea
 deps
 doc/*.css
 doc/*.html
@@ -8,3 +9,4 @@ doc/edoc-info
 ebin
 logs
 test/*.beam
+*.iml
