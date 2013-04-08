@@ -1,4 +1,6 @@
 
+%% ranch_server 是 gen_server 实现，用来维护配置信息，底层存储使用 ets 。
+
 -module(ranch_server).
 -behaviour(gen_server).
 
@@ -33,17 +35,17 @@
 
 %% API.
 
-%% @doc 启动ranch_server gen_server.
+%% 启动ranch_server gen_server.
 -spec start_link() -> {ok, pid()}.
 start_link() ->
 	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-%% @private
+%% 参数：(tcp_echo, 1024, ProtoOpts)
 -spec set_new_listener_opts(any(), ranch:max_conns(), any()) -> ok.
 set_new_listener_opts(Ref, MaxConns, Opts) ->
 	gen_server:call(?MODULE, {set_new_listener_opts, Ref, MaxConns, Opts}).
 
-%% @doc Cleanup listener options after it has been stopped.
+%% Cleanup listener options after it has been stopped.
 -spec cleanup_listener_opts(any()) -> ok.
 cleanup_listener_opts(Ref) ->
 	_ = ets:delete(?TAB, {port, Ref}),
@@ -51,61 +53,59 @@ cleanup_listener_opts(Ref) ->
 	_ = ets:delete(?TAB, {opts, Ref}),
 	ok.
 
-%% @doc Set a connection supervisor associated with specific listener.
+%% Set a connection supervisor associated with specific listener.
 -spec set_connections_sup(any(), pid()) -> ok.
 set_connections_sup(Ref, Pid) ->
 	true = gen_server:call(?MODULE, {set_connections_sup, Ref, Pid}),
 	ok.
 
-%% @doc Return the connection supervisor used by specific listener.
+%% 查询某个监听器的连接监督者
 -spec get_connections_sup(any()) -> pid().
 get_connections_sup(Ref) ->
 	ets:lookup_element(?TAB, {conns_sup, Ref}, 2).
 
-%% @private
 -spec set_port(any(), inet:port_number()) -> ok.
 set_port(Ref, Port) ->
 	gen_server:call(?MODULE, {set_port, Ref, Port}).
 
-%% @doc Return the listener's port.
+%% Return the listener's port.
 -spec get_port(any()) -> inet:port_number().
 get_port(Ref) ->
 	ets:lookup_element(?TAB, {port, Ref}, 2).
 
-%% @doc Set the max number of connections allowed concurrently.
+%% Set the max number of connections allowed concurrently.
 -spec set_max_connections(any(), ranch:max_conns()) -> ok.
 set_max_connections(Ref, MaxConnections) ->
 	gen_server:call(?MODULE, {set_max_conns, Ref, MaxConnections}).
 
-%% @doc Return the max number of connections allowed concurrently.
+%% Return the max number of connections allowed concurrently.
 -spec get_max_connections(any()) -> ranch:max_conns().
 get_max_connections(Ref) ->
 	ets:lookup_element(?TAB, {max_conns, Ref}, 2).
 
-%% @doc Upgrade the protocol options.
+%% Upgrade the protocol options.
 -spec set_protocol_options(any(), any()) -> ok.
 set_protocol_options(Ref, ProtoOpts) ->
 	gen_server:call(?MODULE, {set_opts, Ref, ProtoOpts}).
 
-%% @doc Return the current protocol options.
+%% Return the current protocol options.
 -spec get_protocol_options(any()) -> any().
 get_protocol_options(Ref) ->
 	ets:lookup_element(?TAB, {opts, Ref}, 2).
 
-%% @doc Count the number of connections in the connection pool.
+%% Count the number of connections in the connection pool.
 -spec count_connections(any()) -> non_neg_integer().
 count_connections(Ref) ->
 	ranch_conns_sup:active_connections(get_connections_sup(Ref)).
 
 %% gen_server.
 
-%% @private
 init([]) ->
 	Monitors = [{{erlang:monitor(process, Pid), Pid}, Ref} ||
 		[Ref, Pid] <- ets:match(?TAB, {{conns_sup, '$1'}, '$2'})],
 	{ok, #state{monitors=Monitors}}.
 
-%% @private
+%% 参数：{set_new_listener_opts, tcp_echo, 1024, ProtoOpts}
 handle_call({set_new_listener_opts, Ref, MaxConns, Opts}, _, State) ->
 	ets:insert(?TAB, {{max_conns, Ref}, MaxConns}),
 	ets:insert(?TAB, {{opts, Ref}, Opts}),
@@ -136,11 +136,9 @@ handle_call({set_opts, Ref, Opts}, _, State) ->
 handle_call(_Request, _From, State) ->
 	{reply, ignore, State}.
 
-%% @private
 handle_cast(_Request, State) ->
 	{noreply, State}.
 
-%% @private
 handle_info({'DOWN', MonitorRef, process, Pid, _},
 		State=#state{monitors=Monitors}) ->
 	{_, Ref} = lists:keyfind({MonitorRef, Pid}, 1, Monitors),
@@ -150,10 +148,8 @@ handle_info({'DOWN', MonitorRef, process, Pid, _},
 handle_info(_Info, State) ->
 	{noreply, State}.
 
-%% @private
 terminate(_Reason, _State) ->
 	ok.
 
-%% @private
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.

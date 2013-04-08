@@ -1,4 +1,3 @@
-%% Feel free to use, reuse and abuse the code in this file.
 
 -module(echo_protocol).
 -export([start_link/4, init/4]).

@@ -29,6 +29,7 @@
 %% 传输Transprot选项max_connections允许定义并发连接的最大数目，默认是1024.
 %% transport出错，会返回`{error, badarg}`
 %% ranch:start_listener(tcp_echo, 1, ranch_tcp, [{port, 5555}], echo_protocol, [])
+%% Ref 指的是应用
 -spec start_listener(any(), non_neg_integer(), module(), any(), module(), any())
 	-> {ok, pid()} | {error, badarg}.
 start_listener(Ref, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts)
@@ -141,11 +142,10 @@ get_protocol_options(Ref) ->
 set_protocol_options(Ref, Opts) ->
 	ranch_server:set_protocol_options(Ref, Opts).
 
-%% @doc Filter a list of options and remove all unwanted values.
-%%
-%% It takes a list of options, a list of allowed keys and an accumulator.
-%% This accumulator can be used to set default options that should never
-%% be overriden.
+%% 过滤选项列表，移除不希望的值，实际就是选项参数校验
+%% 函数接收选项列表，允许key的列表，和累加器
+%% 累加器用来设置默认的不可被覆盖的选项 [binary, {active, false}, {packet, raw}, {reuseaddr, true}, {nodelay, true}]
+%% 参数：(Opts2, [backlog, ip, nodelay, port, raw], [binary, {active, false}, {packet, raw}, {reuseaddr, true}, {nodelay, true}])
 -spec filter_options([{atom(), any()}], [atom()], Acc)
 	-> Acc when Acc :: [any()].
 filter_options([], _, Acc) ->
@@ -161,7 +161,7 @@ filter_options([Opt = {raw, _, _, _}|Tail], AllowedKeys, Acc) ->
 		false -> filter_options(Tail, AllowedKeys, Acc)
 	end.
 
-%% @doc Add an option to a list, but only if it wasn't previously set.
+%% 向选项列表中添加选项，前提是该选项之前没有设置
 -spec set_option_default(Opts, atom(), any())
 	-> Opts when Opts :: [{atom(), any()}].
 set_option_default(Opts, Key, Value) ->

@@ -1,19 +1,4 @@
-%% Copyright (c) 2011-2012, Loïc Hoguin <essen@ninenines.eu>
-%%
-%% Permission to use, copy, modify, and/or distribute this software for any
-%% purpose with or without fee is hereby granted, provided that the above
-%% copyright notice and this permission notice appear in all copies.
-%%
-%% THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-%% WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-%% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-%% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-%% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-%% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-%% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-%% @private
-%%
 %% Make sure to never reload this module outside a release upgrade,
 %% as calling l(ranch_conns_sup) twice will kill the process and all
 %% the currently open connections.
@@ -41,6 +26,7 @@
 
 %% API.
 
+%% 参数：[tcp_echo, ranch_tcp, echo_protocol]
 -spec start_link(any(), module(), module()) -> {ok, pid()}.
 start_link(Ref, Transport, Protocol) ->
 	proc_lib:start_link(?MODULE, init, [self(), Ref, Transport, Protocol]).
@@ -61,6 +47,11 @@ start_link(Ref, Transport, Protocol) ->
 %% We do not need the reply, we only need the ok from the supervisor
 %% to continue. The supervisor sends its own pid when the acceptor can
 %% continue.
+%% acceptor 和 conns sup 在同一节点上
+%% acceptor 进程调用的这个函数
+%% 函数中的发送和接受语句没有超时和监控的问题
+%% 如果 ranch_acceptors_sup 崩溃，那么所有的 acceptor 进程都会 die
+%% 连接过多，conns sup 会
 -spec start_protocol(pid(), inet:socket()) -> ok.
 start_protocol(SupPid, Socket) ->
 	SupPid ! {?MODULE, start_protocol, self(), Socket},
@@ -88,6 +79,9 @@ active_connections(SupPid) ->
 
 %% Supervisor internals.
 
+%% 让 ranch_conns_sup 进程成为 master 进程
+%% proc_lib:start_link 和 proc_lib:init_ack 的成对使用
+%%
 -spec init(pid(), any(), module(), module()) -> no_return().
 init(Parent, Ref, Transport, Protocol) ->
 	process_flag(trap_exit, true),
@@ -98,22 +92,26 @@ init(Parent, Ref, Transport, Protocol) ->
 	loop(#state{parent=Parent, ref=Ref, transport=Transport,
 		protocol=Protocol, opts=Opts, max_conns=MaxConns}, 0, 0, []).
 
+%% CurConns -> 当前连接数目
+%% MaxConns -> 最大连接数
 loop(State=#state{parent=Parent, ref=Ref,
 		transport=Transport, protocol=Protocol, opts=Opts,
 		max_conns=MaxConns}, CurConns, NbChildren, Sleepers) ->
 	receive
+    %% ranch acceptor 获取 client socket 后，发送消息给 conns sup 进程
+    %% 此时 client socket 控制进程为 conns sup
 		{?MODULE, start_protocol, To, Socket} ->
-			case Protocol:start_link(Ref, Socket, Transport, Opts) of
+			case Protocol:start_link(Ref, Socket, Transport, Opts) of %% 启动新进程
 				{ok, Pid} ->
-					Transport:controlling_process(Socket, Pid),
-					Pid ! {shoot, Ref},
+					Transport:controlling_process(Socket, Pid),  %% 新进程成为控制进程
+					Pid ! {shoot, Ref}, %% 给工作进程发送消息
 					put(Pid, true),
 					CurConns2 = CurConns + 1,
 					if CurConns2 < MaxConns ->
-							To ! self(),
+							To ! self(),  %% 给 acceptor 进程发送消息
 							loop(State, CurConns2, NbChildren + 1,
 								Sleepers);
-						true ->
+						true -> %% 如果大于最大连接数，当前 acceptor 进入休眠队列（acceptor进程一直在等待消息）
 							loop(State, CurConns2, NbChildren + 1,
 								[To|Sleepers])
 					end;
@@ -145,7 +143,8 @@ loop(State=#state{parent=Parent, ref=Ref,
 		{'EXIT', Pid, _} when Sleepers =:= [] ->
 			erase(Pid),
 			loop(State, CurConns - 1, NbChildren - 1, Sleepers);
-		%% Resume a sleeping acceptor if needed.
+    %% 处理 client socket 的工作进程exit时，发送 EXIT 新号给 master 进程，也就是 conns sup
+    %% 回复 sleeping 的acceptor
 		{'EXIT', Pid, _} ->
 			erase(Pid),
 			[To|Sleepers2] = Sleepers,

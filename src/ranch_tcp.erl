@@ -1,6 +1,5 @@
 
-%% @doc TCP transport API.
-%%
+%% TCP transport API.
 %% gen_tcp 的轻量级封装，实现了 Ranch transport API.
 %%
 -module(ranch_tcp).
@@ -20,10 +19,10 @@
 -export([sockname/1]).
 -export([close/1]).
 
-%% @doc Name of this transport, <em>tcp</em>.
+%% 传输层的名字，tcp.
 name() -> tcp.
 
-%% @doc Atoms used to identify messages in {active, once | true} mode.
+%% Atoms used to identify messages in {active, once | true} mode.
 messages() -> {tcp, tcp_closed, tcp_error}.
 
 %% @doc Listen for connections on the given port number.
@@ -53,9 +52,7 @@ messages() -> {tcp, tcp_closed, tcp_error}.
 	-> {ok, inet:socket()} | {error, atom()}.
 listen(Opts) ->
 	Opts2 = ranch:set_option_default(Opts, backlog, 1024),
-	%% We set the port to 0 because it is given in the Opts directly.
-	%% The port in the options takes precedence over the one in the
-	%% first argument.
+	%% 第一个参数，设置端口号为0，表示操作系统随机选取一个可用的端口号，如果 Opts 中有 port 配置，优先级更高
 	gen_tcp:listen(0, ranch:filter_options(Opts2, [backlog, ip, nodelay, port, raw],
 		[binary, {active, false}, {packet, raw},
 			{reuseaddr, true}, {nodelay, true}])).
@@ -117,8 +114,7 @@ sendfile(Socket, Filename) ->
 setopts(Socket, Opts) ->
 	inet:setopts(Socket, Opts).
 
-%% @doc 设置 socket 控制进程
-%% @see gen_tcp:controlling_process/2
+%% 设置 socket 控制进程
 -spec controlling_process(inet:socket(), pid())
 	-> ok | {error, closed | not_owner | atom()}.
 controlling_process(Socket, Pid) ->
@@ -131,15 +127,13 @@ controlling_process(Socket, Pid) ->
 peername(Socket) ->
 	inet:peername(Socket).
 
-%% @doc Return the local address and port of the connection.
-%% @see inet:sockname/1
+%% 返回连接的 ip 地址和 port.
 -spec sockname(inet:socket())
 	-> {ok, {inet:ip_address(), inet:port_number()}} | {error, atom()}.
 sockname(Socket) ->
 	inet:sockname(Socket).
 
-%% @doc Close the given socket.
-%% @see gen_tcp:close/1
+%% 关闭 socket.
 -spec close(inet:socket()) -> ok.
 close(Socket) ->
 	gen_tcp:close(Socket).

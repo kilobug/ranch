@@ -23,6 +23,7 @@ start_link(Ref, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts) ->
 
 %% supervisor.
 
+%% 参数：{tcp_echo, 1, ranch_tcp, [{port, 5555}], echo_protocol}
 init({Ref, NbAcceptors, Transport, TransOpts, Protocol}) ->
 	ChildSpecs = [
 		%% conns_sup
@@ -34,4 +35,5 @@ init({Ref, NbAcceptors, Transport, TransOpts, Protocol}) ->
 				[Ref, NbAcceptors, Transport, TransOpts]
 			}, permanent, infinity, supervisor, [ranch_acceptors_sup]}
 	],
+  %% 子进程的启动是按照列表顺序从左到右启动，也就是先启动 ranch_conns_sup，再启动 ranch_acceptors_sup
 	{ok, {{rest_for_one, 10, 10}, ChildSpecs}}.

@@ -1,18 +1,4 @@
-%% Copyright (c) 2011-2012, Loïc Hoguin <essen@ninenines.eu>
-%%
-%% Permission to use, copy, modify, and/or distribute this software for any
-%% purpose with or without fee is hereby granted, provided that the above
-%% copyright notice and this permission notice appear in all copies.
-%%
-%% THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-%% WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-%% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-%% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-%% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-%% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-%% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-%% @private
 -module(ranch_acceptors_sup).
 -behaviour(supervisor).
 
@@ -24,6 +10,7 @@
 
 %% API.
 
+%% 参数：(tcp_echo, 1, ranch_tcp, [{port, 5555}])
 -spec start_link(any(), non_neg_integer(), module(), any())
 	-> {ok, pid()}.
 start_link(Ref, NbAcceptors, Transport, TransOpts) ->
@@ -31,8 +18,10 @@ start_link(Ref, NbAcceptors, Transport, TransOpts) ->
 
 %% supervisor.
 
+%% 参数：(tcp_echo, 1, ranch_tcp, [{port, 5555}])
 init([Ref, NbAcceptors, Transport, TransOpts]) ->
 	ConnsSup = ranch_server:get_connections_sup(Ref),
+  %% LSocket -> Listen Socket
 	LSocket = case proplists:get_value(socket, TransOpts) of
 		undefined ->
 			{ok, Socket} = Transport:listen(TransOpts),
@@ -42,6 +31,7 @@ init([Ref, NbAcceptors, Transport, TransOpts]) ->
 	end,
 	{ok, {_, Port}} = Transport:sockname(LSocket),
 	ranch_server:set_port(Ref, Port),
+  %% acceptor 池配置的多大，就有多少 ranch_acceptor
 	Procs = [
 		{{acceptor, self(), N}, {ranch_acceptor, start_link, [
 			LSocket, Transport, ConnsSup
