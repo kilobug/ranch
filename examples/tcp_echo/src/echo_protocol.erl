@@ -7,6 +7,7 @@ start_link(Ref, Socket, Transport, Opts) ->
 	{ok, Pid}.
 
 init(Ref, Socket, Transport, _Opts = []) ->
+  %% 必须调用 accept_ack，确保socket控制权
 	ok = ranch:accept_ack(Ref),
 	loop(Socket, Transport).
 

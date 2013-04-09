@@ -1,5 +1,4 @@
 
-%% @private
 -module(ranch_listener_sup).
 -behaviour(supervisor).
 

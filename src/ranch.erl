@@ -94,10 +94,8 @@ child_spec(Ref, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts)
 		Ref, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts
 	]}, permanent, 5000, supervisor, [ranch_listener_sup]}.
 
-%% @doc Acknowledge the accepted connection.
-%%
-%% Effectively used to make sure the socket control has been given to
-%% the protocol process before starting to use it.
+%% 确保socket使用前，控制权已经转移给工作进程
+%% 如果不做这样的一步消息传递来同步，工作进程可能会提前执行到 recv 代码处
 -spec accept_ack(any()) -> ok.
 accept_ack(Ref) ->
 	receive {shoot, Ref} -> ok end.

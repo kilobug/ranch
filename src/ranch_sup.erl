@@ -1,11 +1,12 @@
 
+%% 根监督者
 -module(ranch_sup).
 -behaviour(supervisor).
 
 %% API.
 -export([start_link/0]).
 
-%% 监督者.
+%% supervisor
 -export([init/1]).
 
 -define(SUPERVISOR, ?MODULE).
@@ -18,6 +19,7 @@ start_link() ->
 
 %% supervisor.
 
+%% 创建一个具名公共 ets 表，用来存储各种配置信息
 init([]) ->
 	ranch_server = ets:new(ranch_server, [ordered_set, public, named_table]),
 	Procs = [
