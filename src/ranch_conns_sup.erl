@@ -2,6 +2,7 @@
 %% Make sure to never reload this module outside a release upgrade,
 %% as calling l(ranch_conns_sup) twice will kill the process and all
 %% the currently open connections.
+%% ranch_conns_sup 是一个监督者，但并没有实现 supervisor 模式，
 -module(ranch_conns_sup).
 
 %% API.
