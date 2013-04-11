@@ -1,5 +1,5 @@
 
-%%
+%% 连接获取进程
 -module(ranch_acceptor).
 
 %% API.

@@ -107,9 +107,8 @@ sendfile(Socket, Filename) ->
 			{error, closed}
 	end.
 
-%% @doc Set options on the given socket.
-%% @see inet:setopts/2
-%% @todo Probably filter Opts?
+%% 设置socket参数
+%% 需要过滤选项?
 -spec setopts(inet:socket(), list()) -> ok | {error, atom()}.
 setopts(Socket, Opts) ->
 	inet:setopts(Socket, Opts).
@@ -120,14 +119,13 @@ setopts(Socket, Opts) ->
 controlling_process(Socket, Pid) ->
 	gen_tcp:controlling_process(Socket, Pid).
 
-%% @doc Return the remote address and port of the connection.
-%% @see inet:peername/1
+%% 返回连接另一端的ip地址和端口
 -spec peername(inet:socket())
 	-> {ok, {inet:ip_address(), inet:port_number()}} | {error, atom()}.
 peername(Socket) ->
 	inet:peername(Socket).
 
-%% 返回连接的 ip 地址和 port.
+%% 返回连接的本地 ip 地址和 port.
 -spec sockname(inet:socket())
 	-> {ok, {inet:ip_address(), inet:port_number()}} | {error, atom()}.
 sockname(Socket) ->

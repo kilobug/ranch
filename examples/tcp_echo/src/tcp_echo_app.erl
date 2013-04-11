@@ -1,6 +1,5 @@
-%% Feel free to use, reuse and abuse the code in this file.
 
-%% @private
+%%
 -module(tcp_echo_app).
 -behaviour(application).
 

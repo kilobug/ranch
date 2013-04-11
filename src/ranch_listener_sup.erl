@@ -1,4 +1,15 @@
 
+%% 该模块是 ranch 最重要的一个监督结构
+%% acceptors 池的管理，连接的管理都是该模块负责
+%% 结构如下：
+%% ranch_listener_sup
+%% --------ranch_acceptors_sup
+%% ----------------ranch_acceptor
+%% --------ranch_conns_sup
+%% ----------------ranch_protocol
+%%
+%% 使用 ranch 模块暴露的 API child_spec，可以生成适合嵌入到应用中的子进程规范
+%% 其实嵌入到应用中的就是一个 ranch_listener_sup 监督结构
 -module(ranch_listener_sup).
 -behaviour(supervisor).
 

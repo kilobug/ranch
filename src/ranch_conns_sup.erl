@@ -118,7 +118,7 @@ loop(State=#state{parent=Parent, ref=Ref,
 		{?MODULE, active_connections, To, Tag} ->
 			To ! {Tag, CurConns},
 			loop(State, CurConns, NbChildren, Sleepers);
-		%% Remove a connection from the count of connections.
+		%% 连接数减 1
 		{remove_connection, Ref} ->
 			loop(State, CurConns - 1, NbChildren, Sleepers);
     %% 更新允许的最大连接数，如果这个数字增加会恢复等待的acceptors

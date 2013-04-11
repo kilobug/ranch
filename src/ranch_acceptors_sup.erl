@@ -1,4 +1,6 @@
 
+%% 连接获取进程的监督者
+%% 底下有 NbAcceptors 个子进程 ranch_acceptor
 -module(ranch_acceptors_sup).
 -behaviour(supervisor).
 
@@ -22,6 +24,8 @@ start_link(Ref, NbAcceptors, Transport, TransOpts) ->
 init([Ref, NbAcceptors, Transport, TransOpts]) ->
 	ConnsSup = ranch_server:get_connections_sup(Ref),
   %% LSocket -> Listen Socket
+  %% 如果是要监听已经存在的 listen socket，需要获取到端口号，通过调用 sockname
+  %% listen socket 的控制进程就是 ranch_acceptors_sup 进程
 	LSocket = case proplists:get_value(socket, TransOpts) of
 		undefined ->
 			{ok, Socket} = Transport:listen(TransOpts),

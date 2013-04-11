@@ -48,7 +48,7 @@ start_link() ->
 set_new_listener_opts(Ref, MaxConns, Opts) ->
 	gen_server:call(?MODULE, {set_new_listener_opts, Ref, MaxConns, Opts}).
 
-%% listener 停止后，清空相关参数
+%% listener 停止后，清空应用 Ref 相关的所有参数
 -spec cleanup_listener_opts(any()) -> ok.
 cleanup_listener_opts(Ref) ->
 	_ = ets:delete(?TAB, {port, Ref}),
@@ -92,7 +92,7 @@ get_max_connections(Ref) ->
 set_protocol_options(Ref, ProtoOpts) ->
 	gen_server:call(?MODULE, {set_opts, Ref, ProtoOpts}).
 
-%% 查询协议选项
+%% 查询协议配置选项值
 -spec get_protocol_options(any()) -> any().
 get_protocol_options(Ref) ->
 	ets:lookup_element(?TAB, {opts, Ref}, 2).
