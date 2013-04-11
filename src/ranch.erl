@@ -30,6 +30,11 @@
 %% transport出错，会返回`{error, badarg}`
 %% ranch:start_listener(tcp_echo, 1, ranch_tcp, [{port, 5555}], echo_protocol, [])
 %% Ref 指的是应用
+
+%% 如果 Ranch 作为单独的应用启动，自己写的应用可以使用多次调用 ranch:start_listener，
+%% 只是必须要传入不同的 Ref 和 port。
+%% 每个ranch应用，ranch_server 只有一个;
+%% ranch_listener_sup 每一个启动的应用会有一个，底下还有acceptors池，conns sup进程
 -spec start_listener(any(), non_neg_integer(), module(), any(), module(), any())
 	-> {ok, pid()} | {error, badarg}.
 start_listener(Ref, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts)
@@ -121,7 +126,10 @@ get_port(Ref) ->
 get_max_connections(Ref) ->
 	ranch_server:get_max_connections(Ref).
 
-%% @doc Set the max number of connections allowed concurrently.
+%% 设置最大连接数
+%% ranch:set_max_connections  -->  ranch_server:set_max_connections -->  给 conns sup 进程发消息，{set_max_conns, MaxConns}
+%% ranch 模块提供 API，给外部应用使用； ranch_server 保存所有应用的配置信息；conns sup 进程才是控制连接并发数的最终进程
+%% 设计还是挺巧妙的
 -spec set_max_connections(any(), max_conns()) -> ok.
 set_max_connections(Ref, MaxConnections) ->
 	ranch_server:set_max_connections(Ref, MaxConnections).

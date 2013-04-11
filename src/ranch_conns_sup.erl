@@ -106,6 +106,8 @@ loop(State=#state{parent=Parent, ref=Ref,
 							loop(State, CurConns2, NbChildren + 1,
 								Sleepers);
 						true -> %% 如果大于最大连接数，当前 acceptor 进入休眠队列（acceptor进程一直在等待消息）
+              %% 这次拿到的 client socket 也不会处理了；如果之前的连接没有处理完， conns sup 进程再收到的任何 client
+              %% socket 都不会被处理，直接抛弃，直到所有 acceptor 进程休眠。
 							loop(State, CurConns2, NbChildren + 1,
 								[To|Sleepers])
 					end;
@@ -119,10 +121,9 @@ loop(State=#state{parent=Parent, ref=Ref,
 		%% Remove a connection from the count of connections.
 		{remove_connection, Ref} ->
 			loop(State, CurConns - 1, NbChildren, Sleepers);
-		%% Upgrade the max number of connections allowed concurrently.
-		%% We resume all sleeping acceptors if this number increases.
+    %% 更新允许的最大连接数，如果这个数字增加会恢复等待的acceptors
 		{set_max_conns, MaxConns2} when MaxConns2 > MaxConns ->
-			_ = [To ! self() || To <- Sleepers],
+			_ = [To ! self() || To <- Sleepers], %% 恢复所有的sleeper
 			loop(State#state{max_conns=MaxConns2},
 				CurConns, NbChildren, []);
 		{set_max_conns, MaxConns2} ->
