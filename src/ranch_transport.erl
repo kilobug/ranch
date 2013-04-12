@@ -1,63 +1,56 @@
 
+%% 传输层的行为模式定义
+%% 为 ranch_tcp 和 ranch_ssl 提供API
 -module(ranch_transport).
 
 -type socket() :: any().
 -type opts() :: any().
 
-%% Name of the transport.
+%% 传输层的名字
 -callback name() -> atom().
 
-%% @todo -callback caps(secure | sendfile) -> boolean().
-
-%% Atoms used to identify messages in {active, once | true} mode.
+%% 在 {active, once | true} 模式中，用来识别消息的原子
 -callback messages() -> {OK::atom(), Closed::atom(), Error::atom()}.
 
-%% Listen for connections on the given port number.
-%%
-%% Calling this function returns a listening socket that can then
-%% be passed to accept/2 to accept connections.
-%%
-%% Available options may vary between transports.
-%%
-%% You can listen to a random port by setting the port option to 0.
-%% It is then possible to retrieve this port number by calling
-%% sockname/1 on the listening socket. If you are using Ranch's
-%% listener API, then this port number can obtained through
-%% ranch:get_port/1 instead.
+%% 在指定端口上监听连接
+%% 调用这个函数会返回 listen socket，用来作为 accept/2 的参数
+%% 不同的传输层会有不同的选项
+%% 设置端口为0，表示监听在一个随机端口
+%% 可以使用 sockname/1 查询监听的端口号
+%% 可以使用 ranch 提供的 API ranch:get_port/1 来查询端口号
 -callback listen(opts()) -> {ok, socket()} | {error, atom()}.
 
-%% Accept connections with the given listening socket.
+%% 接收连接
 -callback accept(socket(), timeout())
 	-> {ok, socket()} | {error, closed | timeout | atom() | tuple()}.
 
-%% Experimental. Open a connection to the given host and port number.
+%% 实验性质
+%% 连接到远程的IP地址和端口号
 -callback connect(string(), inet:port_number(), opts())
 	-> {ok, socket()} | {error, atom()}.
 
-%% Receive data from a socket in passive mode.
+%% 被动模式下接收数据
 -callback recv(socket(), non_neg_integer(), timeout())
 	-> {ok, any()} | {error, closed | timeout | atom()}.
 
-%% Send data on a socket.
+%% 发送数据
 -callback send(socket(), iodata()) -> ok | {error, atom()}.
 
-%% Set options on the given socket.
+%% 设置参数
 -callback setopts(socket(), opts()) -> ok | {error, atom()}.
 
-%% Give control of the socket to a new process.
-%%
-%% Must be called from the process currently controlling the socket,
-%% otherwise an {error, not_owner} tuple will be returned.
+%% 设置 socket 控制进程
+%% 必须从当前控制socket的进程调用，否则 {error, not_owner} 错误会返回
 -callback controlling_process(socket(), pid())
 	-> ok | {error, closed | not_owner | atom()}.
 
-%% Return the remote address and port of the connection.
+%% 返回连接另一端的IP地址和端口号
 -callback peername(socket())
 	-> {ok, {inet:ip_address(), inet:port_number()}} | {error, atom()}.
 
-%% Return the local address and port of the connection.
+%% 返回本地地址和端口号
 -callback sockname(socket())
 	-> {ok, {inet:ip_address(), inet:port_number()}} | {error, atom()}.
 
-%% Close the given socket.
+%% 关闭 socket
 -callback close(socket()) -> ok.

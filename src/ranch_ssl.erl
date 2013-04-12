@@ -1,27 +1,8 @@
-%% Copyright (c) 2011-2012, Loïc Hoguin <essen@ninenines.eu>
-%%
-%% Permission to use, copy, modify, and/or distribute this software for any
-%% purpose with or without fee is hereby granted, provided that the above
-%% copyright notice and this permission notice appear in all copies.
-%%
-%% THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-%% WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-%% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-%% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-%% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-%% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-%% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-%% @doc SSL transport API.
-%%
-%% Wrapper around <em>ssl</em> implementing the Ranch transport API.
-%%
-%% This transport requires the <em>crypto</em>, <em>public_key</em>
-%% and <em>ssl</em> applications to be started. If they aren't started,
-%% it will try to start them itself before opening a port to listen.
-%% Applications aren't stopped when the listening socket is closed, though.
-%%
-%% @see ssl
+%% SSL transport API.
+%% ssl 的轻量级封装，实现 Ranch transport API
+%% 需要启动 crypto，public_key，ssl应用。没有启动的话在监听端口之前会被启动
+%% listen socket 关闭了，应用也不会停止
 -module(ranch_ssl).
 -behaviour(ranch_transport).
 
@@ -39,10 +20,10 @@
 -export([sockname/1]).
 -export([close/1]).
 
-%% @doc Name of this transport, <em>ssl</em>.
+%% 传输层名字，ssl
 name() -> ssl.
 
-%% @doc Atoms used to identify messages in {active, once | true} mode.
+%% 识别消息的元组
 messages() -> {ssl, ssl_closed, ssl_error}.
 
 %% @doc Listen for connections on the given port number.

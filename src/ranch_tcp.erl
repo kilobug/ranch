@@ -1,7 +1,6 @@
 
 %% TCP transport API.
 %% gen_tcp 的轻量级封装，实现了 Ranch transport API.
-%%
 -module(ranch_tcp).
 -behaviour(ranch_transport).
 
@@ -22,31 +21,13 @@
 %% 传输层的名字，tcp.
 name() -> tcp.
 
-%% Atoms used to identify messages in {active, once | true} mode.
 messages() -> {tcp, tcp_closed, tcp_error}.
 
-%% @doc Listen for connections on the given port number.
-%%
-%% Calling this function returns a listening socket that can then
-%% be passed to accept/2 to accept connections.
-%%
-%% The available options are:
-%% <dl>
-%%  <dt>backlog</dt><dd>Maximum length of the pending connections queue.
-%%   Defaults to 1024.</dd>
-%%  <dt>ip</dt><dd>Interface to listen on. Listen on all interfaces
-%%   by default.</dd>
-%%  <dt>nodelay</dt><dd>Optional. Enable TCP_NODELAY. Enabled by default.</dd>
-%%  <dt>port</dt><dd>TCP port number to open. Defaults to 0 (see below).</dd>
-%% </dl>
-%%
-%% You can listen to a random port by setting the port option to 0.
-%% It is then possible to retrieve this port number by calling
-%% sockname/1 on the listening socket. If you are using Ranch's
-%% listener API, then this port number can obtained through
-%% ranch:get_port/1 instead.
-%%
-%% @see gen_tcp:listen/2
+%% 可用选项
+%%     backlog 等待连接队列的长度，默认1024，nginx默认512
+%%     ip 监听的网卡，默认所有网卡
+%%     nodelay 开启 TCP_NODELAY，默认就开启
+%%     port 端口号，默认0
 -spec listen([{backlog, non_neg_integer()} | {ip, inet:ip_address()}
 	| {nodelay, boolean()} | {port, inet:port_number()}])
 	-> {ok, inet:socket()} | {error, atom()}.
@@ -57,15 +38,11 @@ listen(Opts) ->
 		[binary, {active, false}, {packet, raw},
 			{reuseaddr, true}, {nodelay, true}])).
 
-%% @doc Accept connections with the given listening socket.
-%% @see gen_tcp:accept/2
 -spec accept(inet:socket(), timeout())
 	-> {ok, inet:socket()} | {error, closed | timeout | atom()}.
 accept(LSocket, Timeout) ->
 	gen_tcp:accept(LSocket, Timeout).
 
-%% @private Experimental. Open a connection to the given host and port number.
-%% @see gen_tcp:connect/3
 %% @todo Probably filter Opts?
 -spec connect(inet:ip_address() | inet:hostname(),
 	inet:port_number(), any())
@@ -74,26 +51,17 @@ connect(Host, Port, Opts) when is_integer(Port) ->
 	gen_tcp:connect(Host, Port,
 		Opts ++ [binary, {active, false}, {packet, raw}]).
 
-%% @doc Receive data from a socket in passive mode.
-%% @see gen_tcp:recv/3
 -spec recv(inet:socket(), non_neg_integer(), timeout())
 	-> {ok, any()} | {error, closed | atom()}.
 recv(Socket, Length, Timeout) ->
 	gen_tcp:recv(Socket, Length, Timeout).
 
-%% @doc Send data on a socket.
-%% @see gen_tcp:send/2
 -spec send(inet:socket(), iodata()) -> ok | {error, atom()}.
 send(Socket, Packet) ->
 	gen_tcp:send(Socket, Packet).
 
-%% @doc Send a file on a socket.
-%%
-%% This is the optimal way to send files using TCP. It uses a syscall
-%% which means there is no context switch between opening the file
-%% and writing its contents on the socket.
-%%
-%% @see file:sendfile/2
+%% 通过 socket 发送文件
+%% 使用TCP发送文件的可选方式。使用这个系统调用省去了用户空间的来回数据拷贝
 -spec sendfile(inet:socket(), file:name())
 	-> {ok, non_neg_integer()} | {error, atom()}.
 sendfile(Socket, Filename) ->
@@ -101,9 +69,8 @@ sendfile(Socket, Filename) ->
 		Result -> Result
 	catch
 		error:{badmatch, {error, enotconn}} ->
-			%% file:sendfile/2 might fail by throwing a {badmatch, {error, enotconn}}
-			%% this is because its internal implementation fails with a badmatch in
-			%% prim_file:sendfile/10 if the socket is not connected.
+      %% file:senfile/2 可能失败，抛出 {badmatch, {error, enotconn}}
+      %% 因为 socket 连接不上的情况下，内部实现 prim_file:sendfile/10 失败
 			{error, closed}
 	end.
 
