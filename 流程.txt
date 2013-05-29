@@ -1,0 +1,27 @@
+一. ranch app启动:
+	ranch_sup ->
+		ranch_server % 创建ets, 并提供接口给其他进程读写
+二. 启动diy app (监听模块: 用ranch_tcp -> gen_tcp中的方法, 而不是prim_inet)
+	ranch:start_listener方法 -> ranch_sup:start_child
+		ranch_listener_sup -> % 默认每个acceptor最大1024个连接
+			ranch_conn_sup % 等待acceptor发送消息
+			ranch_acceptor_sup -> % 如果没传listen socket, 自动开启
+				ranch_acceptor
+				% 根据ranch:start_listener第二个参数启动N个acceptor
+				% 等待新的请求
+三. 收到请求:
+	1. ranch_acceptor接收到Client Socket
+		(新版erlang支持多进程同时调用gen_tcp:recv)
+		将Client Socket控制权(ranch_tcp:controlling_process)交给ranch_conn_sup
+		向ranch_conn_sup发消息
+			{ranch_conn_sup, start_protocol, acceptor pid(), Client Socket}
+		等待ranch_conn_sup返回消息
+			( ranch_conn_sup在这里延长时间回复, 实现限制最大连接数 )
+	2. ranch_conn_sup(非supervisor)收到client socket
+		根据protocol参数启动protocol_handler
+		然后计算当前连接数是否超标
+		超标就不给当前的acceptor回消息( 对应第二小步最后 )
+		并将当前acceptor pid保存到一个休眠列表
+	3. protocol_handler处理完退出消息发给ranch_conn_sup
+		ranch_conn_sup收到后递减连接数
+		弹出一个休眠列表的acceptor并发消息回复使其激活
